@@ -11,17 +11,21 @@
         .cyber-bg { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); }
         .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .health-bar { transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
-        .shake { animation: shake 0.3s ease-in-out; }
-        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-10px);} 75% {transform: translateX(10px);} }
-        @media print { .no-print { display: none !important; } .print-cert { display: block !important; } }
-        .card-hover:hover { transform: translateY(-5px); transition: 0.3s; }
+        
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .cert-card { animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .print-area { display: block !important; position: absolute; top: 0; left: 0; width: 100%; }
+        }
     </style>
 </head>
 <body class="cyber-bg min-h-screen p-4 overflow-x-hidden">
     <div id="game-container" class="max-w-lg mx-auto mt-6">
         
         <!-- Login Screen -->
-        <div id="screen-reg" class="space-y-6 animate-in fade-in duration-500">
+        <div id="screen-reg" class="space-y-6">
             <h1 class="text-5xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-cyan-400">MISSION</h1>
             <h2 class="text-4xl font-bold text-center text-white">BLOOD RUSH</h2>
             <div class="glass p-8 rounded-3xl space-y-4 shadow-[0_0_30px_rgba(6,182,212,0.2)]">
@@ -43,7 +47,7 @@
             <div class="glass p-6 rounded-3xl border border-red-500/30">
                 <div class="flex justify-between items-center mb-6">
                     <div><p class="text-xs text-slate-400">BOSS VIRUS</p><div id="boss-hp" class="text-2xl font-bold text-red-500">100%</div></div>
-                    <div id="q-counter" class="bg-slate-800 px-3 py-1 rounded-full text-xs text-slate-400">คำถาม 1/20</div>
+                    <div id="q-counter" class="bg-slate-800 px-3 py-1 rounded-full text-xs text-slate-400">คำถาม 1/5</div>
                 </div>
                 <div class="h-4 bg-slate-800 rounded-full overflow-hidden"><div id="bar-boss" class="health-bar h-full bg-red-500 w-full"></div></div>
                 <div id="boss-area" class="text-8xl text-center py-6">🦠</div>
@@ -52,24 +56,31 @@
                 <div id="q-text" class="text-xl font-medium text-center p-4 min-h-[4rem] flex items-center justify-center"></div>
                 <div id="ans-grid" class="grid grid-cols-1 gap-3"></div>
             </div>
-            <div id="msg-box" class="hidden text-center p-6 bg-emerald-900/50 rounded-2xl border border-emerald-500">
-                <h3 class="text-2xl font-bold text-emerald-400" id="final-title">ภารกิจสำเร็จ!</h3>
-                <p id="final-score" class="text-slate-200"></p>
-                <button onclick="window.print()" class="mt-4 bg-emerald-500 px-6 py-2 rounded-full font-bold">พิมพ์เกียรติบัตร</button>
+        </div>
+
+        <div id="cert-box" class="hidden cert-card mt-10 p-1 border-[16px] border-double border-yellow-500 rounded-2xl bg-slate-900 shadow-2xl">
+            <div class="p-8 text-center space-y-4">
+                <h1 class="text-5xl font-extrabold text-yellow-500">เกียรติบัตร</h1>
+                <p class="text-slate-300">ขอรับรองว่า</p>
+                <h2 id="cert-name" class="text-3xl font-bold text-white underline decoration-yellow-500 decoration-4 underline-offset-8"></h2>
+                <p id="cert-class" class="text-xl text-slate-400"></p>
+                <div class="py-6 border-y border-slate-700 my-6">
+                    <p class="text-lg">ผ่านภารกิจกู้ชีพ "Mission Blood Rush"</p>
+                    <p class="text-emerald-400 font-bold text-2xl">ผู้พิทักษ์ระบบไหลเวียนเลือดดีเด่น</p>
+                </div>
+                <button onclick="window.print()" class="no-print w-full bg-yellow-600 hover:bg-yellow-500 py-4 rounded-xl font-bold text-xl shadow-lg">💾 พิมพ์/บันทึกเกียรติบัตร</button>
             </div>
         </div>
     </div>
 
     <script>
-        const state = { name: '', class: '', hp: 100, bossHp: 100, score: 0, qIdx: 0, streak: 0 };
+        const state = { name: '', class: '', bossHp: 100, qIdx: 0, score: 0 };
         const questions = [
             { q: "หลอดเลือดใดมีผนังหนาที่สุด?", o: ["อาร์เทอรี", "เวน", "เส้นเลือดฝอย", "เส้นเลือดดำ"], a: 0 },
             { q: "เส้นเลือดฝอยทำหน้าที่อะไร?", o: ["แลกเปลี่ยนสาร", "ส่งเลือดเข้าหัวใจ", "กักเก็บเลือด", "ส่งเลือดไปปอด"], a: 0 },
             { q: "หลอดเลือดเวนมีสิ่งใดป้องกันเลือดไหลย้อน?", o: ["กล้ามเนื้อ", "ลิ้น", "ผนังหนา", "ผนังบาง"], a: 1 },
             { q: "หลอดเลือดแดงรับแรงดันจากอวัยวะใด?", o: ["ตับ", "ปอด", "หัวใจ", "ไต"], a: 2 },
-            { q: "เลือดสีแดงสดเพราะมีสิ่งใดสูง?", o: ["ไขมัน", "ออกซิเจน", "คาร์บอน", "โปรตีน"], a: 1 },
-            // ... (Add more questions to hit 20) ...
-            { q: "การอุดตันของหลอดเลือดเกิดจาก?", o: ["ออกซิเจน", "ไขมัน", "วิตามิน", "น้ำตาล"], a: 1 }
+            { q: "เลือดสีแดงสดเพราะมีสิ่งใดสูง?", o: ["ไขมัน", "ออกซิเจน", "คาร์บอน", "โปรตีน"], a: 1 }
         ];
 
         function startGame() {
@@ -93,8 +104,8 @@
         }
 
         function loadQuestion() {
-            const q = questions[state.qIdx % questions.length];
-            document.getElementById('q-counter').innerText = `คำถาม ${state.qIdx + 1}/20`;
+            const q = questions[state.qIdx];
+            document.getElementById('q-counter').innerText = `คำถาม ${state.qIdx + 1}/5`;
             document.getElementById('q-text').innerText = q.q;
             const grid = document.getElementById('ans-grid');
             grid.innerHTML = '';
@@ -108,30 +119,25 @@
         }
 
         function handleAns(idx) {
-            if(idx === questions[state.qIdx % questions.length].a) {
-                state.bossHp = Math.max(0, state.bossHp - 5);
-                state.score += 50;
-            } else {
-                document.getElementById('boss-area').classList.add('shake');
-                setTimeout(() => document.getElementById('boss-area').classList.remove('shake'), 300);
+            if(idx === questions[state.qIdx].a) {
+                state.bossHp = Math.max(0, state.bossHp - 20);
+                state.score += 20;
             }
             document.getElementById('bar-boss').style.width = state.bossHp + '%';
             document.getElementById('boss-hp').innerText = state.bossHp + '%';
+            
             state.qIdx++;
-            if(state.qIdx < 20 && state.bossHp > 0) loadQuestion();
-            else endGame();
+            if(state.qIdx < questions.length && state.bossHp > 0) loadQuestion();
+            else showCertificate();
         }
 
-        function endGame() {
-            document.getElementById('quiz-box').classList.add('hidden');
-            document.getElementById('msg-box').classList.remove('hidden');
-            document.getElementById('final-score').innerText = `${state.name} (${state.class}) | คะแนน: ${state.score} XP`;
+        function showCertificate() {
+            document.getElementById('screen-battle').classList.add('hidden');
+            const cert = document.getElementById('cert-box');
+            cert.classList.remove('hidden');
+            document.getElementById('cert-name').innerText = state.name;
+            document.getElementById('cert-class').innerText = state.class;
         }
     </script>
-    <div class="hidden print-cert p-10 border-4 border-emerald-500 text-center space-y-4">
-        <h1 class="text-3xl font-bold">เกียรติบัตร</h1>
-        <p>ผ่านภารกิจ Mission Blood Rush</p>
-        <p>ผู้พิทักษ์ระบบไหลเวียนเลือด</p>
-    </div>
 </body>
 </html>
